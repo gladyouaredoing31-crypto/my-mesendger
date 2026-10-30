@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Мой Чат</title>
+<meta name="theme-color" content="#3390ec">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#3390ec;--pd:#2b7fd1;--bg:#f0f2f5;--b:#e5e5ea;
+  --t:#000;--t2:#707579;--me:#effdde;
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--t)}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit;touch-action:manipulation}
+
+/* ---------- Экран входа ---------- */
+#auth{
+  height:100dvh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#6bbdf8,#3390ec);padding:16px;
+}
+.card{
+  background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:380px;
+  box-shadow:0 10px 40px rgba(0,0,0,.2);
+}
+.logo{font-size:32px;text-align:center;margin-bottom:6px}
+h1{font-size:20px;text-align:center;margin-bottom:6px}
+.sub{text-align:center;color:var(--t2);font-size:14px;margin-bottom:20px}
+.f{margin-bottom:12px}
+.f label{display:block;font-size:12px;color:var(--t2);margin-bottom:4px}
+.f input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--b);border-radius:12px;
+  font-size:16px;outline:none;transition:border .2s;
+}
+.f input:focus{border-color:var(--p)}
+.btn{
+  width:100%;padding:13px;border-radius:12px;background:var(--p);color:#fff;
+  font-weight:600;font-size:15px;transition:background .15s,transform .1s;
+}
+.btn:hover{background:var(--pd)}
+.btn:active{transform:scale(.98)}
+.btn.sec{background:var(--bg);color:var(--p);margin-top:8px}
+.err{color:#e53935;font-size:13px;min-height:18px;text-align:center;margin-bottom:4px}
+
+/* ---------- Чат ---------- */
+#app{height:100dvh;display:none;flex-direction:column}
+#app.on{display:flex}
+.rh{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;
+  box-shadow:0 1px 6px rgba(0,0,0,.08);z-index:2;
+}
+.rh h2{font-size:17px;font-weight:600;flex:1}
+.rh .st{font-size:12px;color:var(--t2)}
+.rh .out{padding:8px 12px;border-radius:10px;background:var(--bg);font-size:13px;color:var(--p);font-weight:600}
+#msgs{
+  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:4px;
+  background:linear-gradient(160deg,#d4e6b5,#a9d4a0 40%,#7fbfa6);
+}
+.m{
+  max-width:min(80%,520px);padding:8px 12px;border-radius:16px 16px 16px 4px;
+  background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.1);
+  overflow-wrap:anywhere;white-space:pre-wrap;font-size:15px;
+}
+.m.me{background:var(--me);align-self:flex-end;border-radius:16px 16px 4px 16px}
+.m b{display:block;font-size:12px;color:var(--p);font-weight:600;margin-bottom:2px}
+.m.me b{color:#4fae4e}
+.m time{font-size:11px;color:#9aa3a8;float:right;margin:4px 0 0 8px}
+.m.me time{color:#4fae4e}
+.day{align-self:center;font-size:12px;color:#fff;background:rgba(0,0,0,.28);padding:3px 12px;border-radius:12px;margin:8px 0}
+.typing{align-self:flex-start;font-size:13px;color:var(--t2);font-style:italic;padding:4px 8px}
+#form{
+  display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  background:#fff;box-shadow:0 -2px 10px rgba(0,0,0,.06);
+}
+#inp{
+  flex:1;padding:11px 16px;border:1px solid transparent;border-radius:24px;
+  background:var(--bg);font-size:16px;outline:none;resize:none;max-height:120px;
+  line-height:1.35;font-family:inherit;transition:border .15s,background .15s;
+}
+#inp:focus{background:#fff;border-color:var(--p)}
+#send{
+  width:44px;height:44px;border-radius:50%;background:var(--p);color:#fff;
+  font-size:20px;flex-shrink:0;transition:background .15s,transform .1s;
+}
+#send:hover{background:var(--pd)}
+#send:active{transform:scale(.9)}
+#conn{
+  text-align:center;padding:6px;background:#fff3cd;color:#856404;font-size:12px;
+}
+@media(max-width:400px){
+  .card{padding:24px 20px}
+  h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ЭКРАН ВХОДА -->
+<div id="auth">
+  <div class="card">
+    <div class="logo">💬</div>
+    <h1>Мой Чат</h1>
+    <p class="sub">Своя болталка для своих</p>
+    <div class="err" id="err"></div>
+    <div class="f"><label>Ник</label><input id="u" maxlength="20" autocomplete="username" placeholder="например, vanya"></div>
+    <div class="f"><label>Пароль</label><input id="p" type="password" autocomplete="current-password" placeholder="минимум 4 символа"></div>
+    <button class="btn" id="login">Войти</button>
+    <button class="btn sec" id="reg">Регистрация</button>
+  </div>
+</div>
+
+<!-- ЧАТ -->
+<div id="app">
+  <div class="rh">
+    <div>
+      <h2>Общий чат</h2>
+      <div class="st" id="status">Подключение…</div>
+    </div>
+    <button class="out" id="logout">Выйти</button>
+  </div>
+  <div id="conn" hidden>Нет соединения, переподключаюсь…</div>
+  <div id="msgs"></div>
+  <form id="form">
+    <textarea id="inp" rows="1" placeholder="Сообщение" autocomplete="off" enterkeyhint="send"></textarea>
+    <button id="send" type="submit" aria-label="Отправить">➤</button>
+  </form>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm = t => new Date(t).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+const dl = t => new Date(t).toLocaleDateString('ru-RU', {day:'numeric', month:'long'});
+
+let token = localStorage.getItem('mc_token');
+let me = localStorage.getItem('mc_user');
+let socket = null;
+let lastDay = null;
+
+// ---------- авторазмер поля ----------
+const inp = $('#inp');
+inp.addEventListener('input', () => {
+  inp.style.height = 'auto';
+  inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+});
+
+// ---------- авторизация ----------
+async function doAuth(url) {
+  $('#err').textContent = '';
+  const username = $('#u').value.trim();
+  const password = $('#p').value;
+  if (!username || !password) { $('#err').textContent = 'Заполни оба поля'; return; }
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const d = await r.json();
+    if (!r.ok) { $('#err').textContent = d.error || 'Ошибка'; return; }
+    token = d.token; me = d.username;
+    localStorage.setItem('mc_token', token);
+    localStorage.setItem('mc_user', me);
+    startChat();
+  } catch {
+    $('#err').textContent = 'Нет соединения с сервером';
+  }
+}
+$('#login').onclick = () => doAuth('/api/login');
+$('#reg').onclick = () => doAuth('/api/register');
+$('#logout').onclick = () => {
+  if (socket) socket.disconnect();
+  localStorage.removeItem('mc_token');
+  localStorage.removeItem('mc_user');
+  location.reload();
+};
+
+// ---------- чат ----------
+function startChat() {
+  $('#auth').style.display = 'none';
+  $('#app').classList.add('on');
+  $('#status').textContent = 'Подключение…';
+
+  socket = io({ auth: { token } });
+
+  socket.on('connect', () => {
+    $('#conn').hidden = true;
+    $('#status').textContent = 'Онлайн';
+  });
+
+  socket.on('disconnect', () => {
+    $('#conn').hidden = false;
+    $('#status').textContent = 'Отключён';
+  });
+
+  socket.on('connect_error', () => {
+    // токен протух или сервер недоступен
+    localStorage.removeItem('mc_token');
+    localStorage.removeItem('mc_user');
+    setTimeout(() => location.reload(), 800);
+  });
+
+  socket.on('history', list => {
+    const box = $('#msgs');
+    box.innerHTML = '';
+    lastDay = null;
+    list.forEach(addMessage);
+    scrollDown();
+  });
+
+  socket.on('message', m => {
+    addMessage(m);
+    scrollDown();
+    removeTyping();
+  });
+
+  socket.on('online', n => {
+    $('#status').textContent = n + ' ' + plural(n, ['человек', 'человека', 'человек']) + ' онлайн';
+  });
+
+  let typingTimer = null;
+  socket.on('typing', ({ username }) => {
+    if (username === me) return;
+    let el = $('#typingInd');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'typingInd';
+      el.className = 'typing';
+      $('#msgs').appendChild(el);
+    }
+    el.textContent = username + ' печатает…';
+    scrollDown();
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(removeTyping, 2500);
+  });
+}
+
+function addMessage(m) {
+  const box = $('#msgs');
+  const d = new Date(m.ts).toDateString();
+  if (d !== lastDay) {
+    lastDay = d;
+    const day = document.createElement('div');
+    day.className = 'day';
+    day.textContent = dl(m.ts);
+    box.appendChild(day);
+  }
+  const el = document.createElement('div');
+  el.className = 'm' + (m.username === me ? ' me' : '');
+  el.innerHTML = `<b>${esc(m.username)}</b>${esc(m.text)}<time>${hm(m.ts)}</time>`;
+  box.appendChild(el);
+}
+
+function removeTyping() {
+  const el = $('#typingInd');
+  if (el) el.remove();
+}
+function scrollDown() {
+  const box = $('#msgs');
+  box.scrollTop = box.scrollHeight;
+}
+function plural(n, forms) {
+  n = Math.abs(n) % 100;
+  const n1 = n % 10;
+  if (n > 10 && n < 20) return forms[2];
+  if (n1 > 1 && n1 < 5) return forms[1];
+  if (n1 === 1) return forms[0];
+  return forms[2];
+}
+
+// ---------- отправка ----------
+$('#form').onsubmit = e => {
+  e.preventDefault();
+  const text = inp.value.trim();
+  if (!text || !socket) return;
+  socket.emit('message', text);
+  inp.value = '';
+  inp.style.height = 'auto';
+};
+
+// печатает…
+let typingSent = 0;
+inp.addEventListener('input', () => {
+  if (!socket) return;
+  const now = Date.now();
+  if (now - typingSent > 1500) {
+    typingSent = now;
+    socket.emit('typing');
+  }
+});
+
+// ---------- старт ----------
+if (token && me) startChat();
+
+// PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+  </html>
